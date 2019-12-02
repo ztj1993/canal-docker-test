@@ -1,0 +1,56 @@
+version: '3.1'
+
+services:
+  mysql:
+    image: mysql:5.7
+    command: >
+      mysqld
+      --default-authentication-plugin=mysql_native_password
+      --log-bin=mysql-bin
+      --binlog-format=ROW
+      --server_id=1
+    environment:
+      MYSQL_ROOT_PASSWORD: root
+      MYSQL_ALLOW_EMPTY_PASSWORD: 1
+      MYSQL_DATABASE: test
+      MYSQL_USER: test
+      MYSQL_PASSWORD: test
+    volumes:
+      - /etc/localtime:/etc/localtime:ro
+      - ./mysql-init/:/docker-entrypoint-initdb.d/
+    ports:
+      - 3306:3306
+
+  canal-server:
+    image: b5e29fd3130c
+    volumes:
+      - /etc/localtime:/etc/localtime:ro
+      - ./canal-server-logs/:/home/admin/canal-server/logs/
+    environment:
+      - "canal.instance.master.address=mysql:3306"
+      - "canal.instance.dbUsername=canal"
+      - "canal.instance.dbPassword=canal"
+    ports:
+      - 11111:11111
+      - 11110:11110
+      - 11112:11112
+      - 9100:9100
+    links:
+      - mysql
+    depends_on:
+      - mysql
+
+  canal-adapter:
+    image: thenorthmemory/canal:1.1.4-alpine
+    command: adapter
+    working_dir: /alibaba/canal-adapter
+    volumes:
+      - /etc/localtime:/etc/localtime:ro
+    environment:
+      - "canal.conf.canalServerHost=canal-server:11111"
+    ports:
+      - 8081:8081
+    links:
+      - canal-server
+    depends_on:
+      - canal-server
