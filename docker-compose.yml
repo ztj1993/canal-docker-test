@@ -22,7 +22,7 @@ services:
       - 3306:3306
 
   canal-server:
-    image: b5e29fd3130c
+    image: ztj1993/image:canal-server
     volumes:
       - /etc/localtime:/etc/localtime:ro
       - ./canal-server-logs/:/home/admin/canal-server/logs/
